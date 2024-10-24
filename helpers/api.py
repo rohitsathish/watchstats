@@ -8,7 +8,13 @@ import pandas as pd
 import numpy as np
 from streamlit import session_state as ss
 from db import db_o3
-from db.db_o3 import add_data, read_table_df, check_value_exists, get_column_value, filter_new_data
+from db.db_o3 import (
+    add_data,
+    read_table_df,
+    check_value_exists,
+    get_column_value,
+    filter_new_data,
+)
 
 # from db.db_o1 import
 # import aiohttp
@@ -34,7 +40,9 @@ tmdb_headers = {
     # "Authorization": "Bearer 652a87adc664247119bad869af0728b3"
 }
 
-logging.basicConfig(level=logging.WARNING, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.WARNING, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # ---- Global Constants ----
 
@@ -174,7 +182,9 @@ async def api_call_wrapper(
                 else:
                     wait_duration = 10
                 await asyncio.sleep(wait_duration)
-                return await api_call_wrapper(client, url, current_retry=current_retry + 1)
+                return await api_call_wrapper(
+                    client, url, current_retry=current_retry + 1
+                )
             else:
                 response.raise_for_status()
 
@@ -186,7 +196,9 @@ async def api_call_wrapper(
         response.raise_for_status()
 
     except httpx.ConnectError as e:
-        logging.error(f"Network error encountered: {e}. URL: {url}. Attempt {current_retry + 1} of {max_retries}")
+        logging.error(
+            f"Network error encountered: {e}. URL: {url}. Attempt {current_retry + 1} of {max_retries}"
+        )
         if current_retry < max_retries:
             if "https://api.themoviedb.org" in url:
                 logging.warning("TMDB hit, Connecterror")
@@ -194,7 +206,9 @@ async def api_call_wrapper(
             else:
                 wait_duration = 10
             await asyncio.sleep(wait_duration)
-            return await api_call_wrapper(client, url, current_retry=current_retry + 1)  # Retry the request
+            return await api_call_wrapper(
+                client, url, current_retry=current_retry + 1
+            )  # Retry the request
         else:
             raise  # Reraise the ConnectError after max retries
     except httpx.HTTPStatusError as e:
@@ -206,7 +220,9 @@ async def api_call_wrapper(
 
 
 def get_media_data(slug):
-    return req.get(f"https://api.trakt.tv/{slug}?extended=full", headers=ss.user_headers).json()
+    return req.get(
+        f"https://api.trakt.tv/{slug}?extended=full", headers=ss.user_headers
+    ).json()
 
 
 def get_tmdb_media_data(id_, client=None, media_type="movie", ext=None):
@@ -214,7 +230,9 @@ def get_tmdb_media_data(id_, client=None, media_type="movie", ext=None):
     if not client:
         return req.get(get_tmdb_url(id_, media_type, ext), headers=tmdb_headers).json()
     else:
-        return api_call_wrapper(client, get_tmdb_url(id_, media_type, ext), headers=tmdb_headers)
+        return api_call_wrapper(
+            client, get_tmdb_url(id_, media_type, ext), headers=tmdb_headers
+        )
 
 
 def get_tmdb_url(id_, media_type="movie", ext=None):
@@ -270,7 +288,9 @@ def consolidate_trakt_genres(genres, mapping):
     """
     The approach taken here for the consolidated genres column is to use the imdb genres where available and a modified version of trakt genres when they are not available. The trakt genres dictionary has been modified to change or remove certain genres that do not align with IMDB genres. This function uses that dictionary to then create a consolidated genres column.
     """
-    transformed_dict = {value["name"]: {**value, "slug": key} for key, value in mapping.items()}
+    transformed_dict = {
+        value["name"]: {**value, "slug": key} for key, value in mapping.items()
+    }
 
     for value in transformed_dict.values():
         del value["name"]
@@ -299,9 +319,13 @@ def add_ratings_col(df, ratings_df, merge_col):
         ratings_df = ratings_df.drop(["season_num", "ep_num"], axis=1)
 
     if merge_col != "show":
-        with_ratings_df = pd.merge(df, ratings_df, on=["show_trakt_id", "media_type", merge_col], how="left")
+        with_ratings_df = pd.merge(
+            df, ratings_df, on=["show_trakt_id", "media_type", merge_col], how="left"
+        )
     else:
-        with_ratings_df = pd.merge(df, ratings_df, on=["show_trakt_id", "media_type"], how="left")
+        with_ratings_df = pd.merge(
+            df, ratings_df, on=["show_trakt_id", "media_type"], how="left"
+        )
 
     cols = list(df.columns)
     cols.insert(cols.index("watched_at"), "user_rating")
@@ -345,7 +369,9 @@ async def fetch_trakt_ratings(trakt_id):
         http2=True,
     ) as client:
         url = f"https://api.trakt.tv/users/{trakt_id}/ratings/all"
-        response = await api_call_wrapper(client, url, headers=ss.user_headers, use_cache=False)
+        response = await api_call_wrapper(
+            client, url, headers=ss.user_headers, use_cache=False
+        )
     ratings = response.json()
     return ratings
 
@@ -507,12 +533,18 @@ async def fetch_tmdb_certification_data(client, media_type, id_):
                 return {"tmdb_certification": None}
 
             us_data = next(
-                (item["release_dates"] for item in data["results"] if item["iso_3166_1"] == "US"),
+                (
+                    item["release_dates"]
+                    for item in data["results"]
+                    if item["iso_3166_1"] == "US"
+                ),
                 [],
             )
             # Filter out empty or None certifications and collect all
             certifications = [
-                release["certification"] for release in us_data if release["certification"] not in [None, "nan", ""]
+                release["certification"]
+                for release in us_data
+                if release["certification"] not in [None, "nan", ""]
             ]
             # Find the most common certification if there are multiple.
             # Could be replaced with just taking the first value to speed things up.
@@ -529,7 +561,11 @@ async def fetch_tmdb_certification_data(client, media_type, id_):
                 return {"tmdb_certification": None}
 
             certification = next(
-                (item["rating"] for item in data_show["results"] if item["iso_3166_1"] == "US"),
+                (
+                    item["rating"]
+                    for item in data_show["results"]
+                    if item["iso_3166_1"] == "US"
+                ),
                 None,
             )
 
@@ -552,7 +588,11 @@ async def fetch_tmdb_keywords_data(client, media_type, id_):
         # Try to fetch keywords from either 'results' or 'keywords', whichever is present. It seems like the keywords endpoint of TMDB is different for movies and shows. For shows its results and for movies its keywords
         keywords_list = data.get("results") or data.get("keywords") or []
 
-        keywords = {"tmdb_keywords": [item.get("name") for item in keywords_list] if keywords_list else None}
+        keywords = {
+            "tmdb_keywords": (
+                [item.get("name") for item in keywords_list] if keywords_list else None
+            )
+        }
 
         # st.write(keywords)
         return keywords
@@ -587,7 +627,9 @@ async def fetch_tmdb_data(client, media_type, id_):
                 # "tmdb_prod_companies": prod_companies,
                 # "tmdb_status": data.get("status"),
                 "tmdb_collection": (
-                    data.get("belongs_to_collection", {}).get("name") if data.get("belongs_to_collection") else None
+                    data.get("belongs_to_collection", {}).get("name")
+                    if data.get("belongs_to_collection")
+                    else None
                 ),
                 "tmdb_imdb_id": data.get("imdb_id"),
                 "tmdb_last_air_date": None,
@@ -634,8 +676,12 @@ async def add_tmdb_data(df):
         tasks = []
         for row in df.to_dict("records"):
             tmdb_data = fetch_tmdb_data(client, row["media_type"], row["show_tmdb_id"])
-            tmdb_keywords_data = fetch_tmdb_keywords_data(client, row["media_type"], row["show_tmdb_id"])
-            tmdb_cert_data = fetch_tmdb_certification_data(client, row["media_type"], row["show_tmdb_id"])
+            tmdb_keywords_data = fetch_tmdb_keywords_data(
+                client, row["media_type"], row["show_tmdb_id"]
+            )
+            tmdb_cert_data = fetch_tmdb_certification_data(
+                client, row["media_type"], row["show_tmdb_id"]
+            )
             tasks.append((tmdb_data, tmdb_keywords_data, tmdb_cert_data))
 
         lock = asyncio.Lock()
@@ -647,10 +693,15 @@ async def add_tmdb_data(df):
             merged_result = {**tmdb_result, **keywords_result, **cert_result}
             async with lock:
                 completed_tasks += 1
-                progress_text.write(f"TMDB Data: Completed {completed_tasks} of {len(tasks)} tasks.")
+                progress_text.write(
+                    f"TMDB Data: Completed {completed_tasks} of {len(tasks)} tasks."
+                )
             return merged_result
 
-        wrapped_tasks = [progress_wrapper(task_trio, i, len(tasks)) for i, task_trio in enumerate(tasks)]
+        wrapped_tasks = [
+            progress_wrapper(task_trio, i, len(tasks))
+            for i, task_trio in enumerate(tasks)
+        ]
         results = await asyncio.gather(*wrapped_tasks)
 
     return results
@@ -737,10 +788,14 @@ async def add_imdb_data(df):
             result = await task
             async with lock:
                 completed_tasks += 1
-                progress_text.write(f"IMDB Data: Completed {completed_tasks} of {total} tasks.")
+                progress_text.write(
+                    f"IMDB Data: Completed {completed_tasks} of {total} tasks."
+                )
             return result
 
-        wrapped_tasks = [progress_wrapper(task, i, len(tasks)) for i, task in enumerate(tasks)]
+        wrapped_tasks = [
+            progress_wrapper(task, i, len(tasks)) for i, task in enumerate(tasks)
+        ]
         results = await asyncio.gather(*wrapped_tasks)
 
         return results
@@ -1016,7 +1071,9 @@ async def trakt_history_and_data(shallow=True, start_dt=None, end_dt=dt.utcnow()
         base_url = f"https://api.trakt.tv/users/{ss.trakt_user_id}/history?extended=full&limit=100"
 
     async with httpx.AsyncClient(
-        timeout=200.0, limits=httpx.Limits(max_connections=100, max_keepalive_connections=40), http2=True
+        timeout=200.0,
+        limits=httpx.Limits(max_connections=100, max_keepalive_connections=40),
+        http2=True,
     ) as client:
 
         tt = time.time()
@@ -1035,17 +1092,26 @@ async def trakt_history_and_data(shallow=True, start_dt=None, end_dt=dt.utcnow()
 
         async def progress_wrapper(url, page, total):
             nonlocal completed_tasks
-            response = await api_call_wrapper(client, url, headers=ss.user_headers, use_cache=False)
+            response = await api_call_wrapper(
+                client, url, headers=ss.user_headers, use_cache=False
+            )
             result = response.json()
             async with lock:
                 completed_tasks += 1
-                progress_text.write(f"Trakt History: Retrieved {completed_tasks + 1} of {total} pages.")
+                progress_text.write(
+                    f"Trakt History: Retrieved {completed_tasks + 1} of {total} pages."
+                )
             return result
 
         # Fetch all pages concurrently with progress tracking
-        tasks = [progress_wrapper(f"{base_url}&page={page}", page, total_pages) for page in range(2, total_pages + 1)]
+        tasks = [
+            progress_wrapper(f"{base_url}&page={page}", page, total_pages)
+            for page in range(2, total_pages + 1)
+        ]
         results = await asyncio.gather(*tasks)
-        all_data = first_page + [item for page_result in results for item in page_result]
+        all_data = first_page + [
+            item for page_result in results for item in page_result
+        ]
 
     st.write(time.time() - tt, "Load Trakt History")
 
@@ -1118,7 +1184,9 @@ async def get_new_imdb_data(df):
 
     df = df.dropna(subset=["show_imdb_id"]).drop_duplicates(subset=["show_imdb_id"])
 
-    existing_imdb_ids = filter_new_data(df, "show_imdb_id", "imdb_media", "show_imdb_id")
+    existing_imdb_ids = filter_new_data(
+        df, "show_imdb_id", "imdb_media", "show_imdb_id"
+    )
 
     df_to_fetch = df[~df["show_imdb_id"].isin(existing_imdb_ids)]
 
@@ -1144,7 +1212,9 @@ async def get_new_tmdb_data(df):
 
     df = df.dropna(subset=["show_tmdb_id"]).drop_duplicates(subset=["show_tmdb_id"])
 
-    existing_tmdb_ids = filter_new_data(df, "show_tmdb_id", "tmdb_media", "show_tmdb_id")
+    existing_tmdb_ids = filter_new_data(
+        df, "show_tmdb_id", "tmdb_media", "show_tmdb_id"
+    )
 
     df_to_fetch = df[~df["show_tmdb_id"].isin(existing_tmdb_ids)]
 
@@ -1154,7 +1224,9 @@ async def get_new_tmdb_data(df):
 
         tmdb_df = pd.DataFrame(tmdb_data)
         tmdb_df["show_tmdb_id"] = df_to_fetch["show_tmdb_id"].values
-        tmdb_df["tmdb_language"] = tmdb_df["tmdb_language"].replace(load_tmdb_lang_codes())
+        tmdb_df["tmdb_language"] = tmdb_df["tmdb_language"].replace(
+            load_tmdb_lang_codes()
+        )
 
         col_dict_1 = {k: v for k, v in col_dict.items() if k in tmdb_df.columns}
         # st.write(col_dict_1)
@@ -1184,7 +1256,9 @@ async def build_watch_history(trakt_id, test=True):
             "trakt_user_id": pd.Series([ss.trakt_user_id], dtype="string"),
             "trakt_uuid": pd.Series([ss.trakt_uuid], dtype="string"),
             "trakt_auth_token": pd.Series([ss.token["access_token"]], dtype="string"),
-            "last_db_update": pd.Series([dt.utcnow() - relativedelta(days=10)], dtype="datetime64[ns]"),
+            "last_db_update": pd.Series(
+                [dt.utcnow() - relativedelta(days=10)], dtype="datetime64[ns]"
+            ),
         }
     )
 

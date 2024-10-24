@@ -96,7 +96,11 @@ def get_watch_count(df):
 
     # For episodes, adjust the grouping column
     df.loc[df["media_type"] == "episode", "grouping_col"] = (
-        df["show_trakt_id"].astype(str) + "_" + df["season_num"].astype(str) + "_" + df["ep_num"].astype(str)
+        df["show_trakt_id"].astype(str)
+        + "_"
+        + df["season_num"].astype(str)
+        + "_"
+        + df["ep_num"].astype(str)
     )
 
     aggregations = {col: "first" for col in df.columns}
@@ -104,7 +108,10 @@ def get_watch_count(df):
 
     # Group by the generated column and aggregate
     result_df = (
-        df.groupby("grouping_col").agg(aggregations).rename(columns={"event_id": "plays"}).reset_index(drop=True)
+        df.groupby("grouping_col")
+        .agg(aggregations)
+        .rename(columns={"event_id": "plays"})
+        .reset_index(drop=True)
     )
 
     result_df["watchtime"] = result_df["plays"] * result_df["runtime"]
@@ -118,7 +125,9 @@ def get_watch_count(df):
     cur_col_dict = {k: v for k, v in col_dict.items() if k in result_df.columns}
     result_df = result_df.astype(cur_col_dict)
 
-    result_df = result_df.sort_values(by="watched_at", ascending=False).reset_index(drop=True)
+    result_df = result_df.sort_values(by="watched_at", ascending=False).reset_index(
+        drop=True
+    )
 
     return result_df
 
@@ -131,19 +140,31 @@ def group_by_season(df):
 
     # Define aggregations
     aggregations = {column: "first" for column in df.columns}
-    aggregations.update({"runtime": "sum", "watchtime": "sum", "plays": "sum", "watched_at": "max", "released": "min"})
+    aggregations.update(
+        {
+            "runtime": "sum",
+            "watchtime": "sum",
+            "plays": "sum",
+            "watched_at": "max",
+            "released": "min",
+        }
+    )
 
     season_df = grouped_df.groupby(["show_trakt_id", "season_num"]).agg(aggregations)
     season_df = pd.concat([season_df, none_df], ignore_index=True)
     season_df["trakt_url"] = season_df["trakt_url"].str.split("/episodes").str[0]
 
-    season_df = season_df.drop(columns=["ep_num", "ep_title", "ep_num_abs", "ep_overview"], axis=1)
+    season_df = season_df.drop(
+        columns=["ep_num", "ep_title", "ep_num_abs", "ep_overview"], axis=1
+    )
 
     # season ep plays not part of this column list
     cur_col_dict = {k: v for k, v in col_dict.items() if k in season_df.columns}
     season_df = season_df.astype(cur_col_dict)
 
-    season_df = season_df.sort_values(by="watched_at", ascending=False).reset_index(drop=True)
+    season_df = season_df.sort_values(by="watched_at", ascending=False).reset_index(
+        drop=True
+    )
 
     return season_df
 
@@ -155,25 +176,40 @@ def group_by_show(df):
 
     # Define aggregations
     aggregations = {column: "first" for column in df.columns}
-    aggregations.update({"runtime": "sum", "watchtime": "sum", "plays": "sum", "watched_at": "max", "released": "min"})
+    aggregations.update(
+        {
+            "runtime": "sum",
+            "watchtime": "sum",
+            "plays": "sum",
+            "watched_at": "max",
+            "released": "min",
+        }
+    )
 
     shows_df = grouped_df.groupby(["show_trakt_id"]).agg(aggregations)
     shows_df = pd.concat([shows_df, none_df], ignore_index=True)
     shows_df["trakt_url"] = shows_df["trakt_url"].str.split("/seasons").str[0]
 
-    shows_df = shows_df.drop(columns=["ep_num", "season_num", "ep_title", "ep_num_abs", "ep_overview"], axis=1)
+    shows_df = shows_df.drop(
+        columns=["ep_num", "season_num", "ep_title", "ep_num_abs", "ep_overview"],
+        axis=1,
+    )
 
     # season ep plays not part of this column list
     cur_col_dict = {k: v for k, v in col_dict.items() if k in shows_df.columns}
     shows_df = shows_df.astype(cur_col_dict)
 
-    shows_df = shows_df.sort_values(by="watched_at", ascending=False).reset_index(drop=True)
+    shows_df = shows_df.sort_values(by="watched_at", ascending=False).reset_index(
+        drop=True
+    )
 
     return shows_df
 
 
 @st.cache_data
-def wrangle_data_for_plots(df, column_name, media_type="all", sum_100=False, n=10, others_threshold=1):
+def wrangle_data_for_plots(
+    df, column_name, media_type="all", sum_100=False, n=10, others_threshold=1
+):
     """
     Wrangles data by filtering based on media type, handling missing values, and grouping smaller categories.
 
@@ -199,11 +235,17 @@ def wrangle_data_for_plots(df, column_name, media_type="all", sum_100=False, n=1
 
     # Handle NaN values and empty lists as 'Unknown'
     has_unknowns = (
-        df_copy[column_name].isna().any() or df_copy[column_name].apply(lambda x: x == [] or x == "" or x == " ").any()
+        df_copy[column_name].isna().any()
+        or df_copy[column_name].apply(lambda x: x == [] or x == "" or x == " ").any()
     )
     if has_unknowns:
         df_copy[column_name] = df_copy[column_name].apply(
-            lambda x: "Unknown" if (not isinstance(x, list) and pd.isnull(x)) or (isinstance(x, list) and not x) else x
+            lambda x: (
+                "Unknown"
+                if (not isinstance(x, list) and pd.isnull(x))
+                or (isinstance(x, list) and not x)
+                else x
+            )
         )
 
     # Handle list columns
@@ -214,16 +256,19 @@ def wrangle_data_for_plots(df, column_name, media_type="all", sum_100=False, n=1
 
     # Group by the specified column and aggregate on watchtime
     df_grouped = (
-        df_copy.groupby(column_name).agg({"watchtime": "sum"}).sort_values("watchtime", ascending=False).reset_index()
+        df_copy.groupby(column_name)
+        .agg({"watchtime": "sum"})
+        .sort_values("watchtime", ascending=False)
+        .reset_index()
     )
 
     # Percentage calculations and formatting
     df_grouped["%_tw"] = (df_grouped["watchtime"] / total_time) * 100
 
     # Group smaller categories into 'Others'
-    others_mask = ((df_grouped.index >= n) | (df_grouped["%_tw"] < others_threshold)) & (
-        df_grouped[column_name] != "Unknown"
-    )
+    others_mask = (
+        (df_grouped.index >= n) | (df_grouped["%_tw"] < others_threshold)
+    ) & (df_grouped[column_name] != "Unknown")
     others_sum = df_grouped.loc[others_mask, "watchtime"].sum()
     if others_sum > 0:
         others_percentage = others_sum / total_time * 100
@@ -264,13 +309,28 @@ def process_for_echarts(df, column_name):
     """
     data = df.groupby(column_name)[["watchtime", "%_tw"]].sum().reset_index()
     data_list = data.apply(
-        lambda row: {"value": row["watchtime"], "%_tw": row["%_tw"], "name": row[column_name]}, axis=1
+        lambda row: {
+            "value": row["watchtime"],
+            "%_tw": row["%_tw"],
+            "name": row[column_name],
+        },
+        axis=1,
     ).tolist()
 
     # Sort data in decreasing order of watchtime, with 'Others' and 'Unknown' at the end
-    data_list = sorted(data_list, key=lambda x: (x["name"] not in ["Others", "Unknown"], -x["value"]))
-    data_list.append(data_list.pop(data_list.index(next(filter(lambda x: x["name"] == "Others", data_list)))))
-    data_list.append(data_list.pop(data_list.index(next(filter(lambda x: x["name"] == "Unknown", data_list)))))
+    data_list = sorted(
+        data_list, key=lambda x: (x["name"] not in ["Others", "Unknown"], -x["value"])
+    )
+    data_list.append(
+        data_list.pop(
+            data_list.index(next(filter(lambda x: x["name"] == "Others", data_list)))
+        )
+    )
+    data_list.append(
+        data_list.pop(
+            data_list.index(next(filter(lambda x: x["name"] == "Unknown", data_list)))
+        )
+    )
 
     # st.write(data_list)
 

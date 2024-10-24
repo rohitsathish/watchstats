@@ -12,7 +12,14 @@ CLIENT_SECRET = "4e65579de5aa8890afd6bbac80a91c1634ff2743066b05df8a4424b92554ff9
 REDIRECT_URI = "http://localhost:8501"
 SCOPE = "public"
 
-oauth2 = OAuth2Component(CLIENT_ID, CLIENT_SECRET, AUTHORIZE_URL, TOKEN_URL, REFRESH_TOKEN_URL, REVOKE_TOKEN_URL)
+oauth2 = OAuth2Component(
+    CLIENT_ID,
+    CLIENT_SECRET,
+    AUTHORIZE_URL,
+    TOKEN_URL,
+    REFRESH_TOKEN_URL,
+    REVOKE_TOKEN_URL,
+)
 
 
 def clear_token():
@@ -28,7 +35,10 @@ def handle_oauth():
         # _, c, _ = st.columns([1, 22, 1])
         # with c:
         result = oauth2.authorize_button(
-            "Sign in", REDIRECT_URI, SCOPE, icon="https://walter.trakt.tv/hotlink-ok/public/favicon.ico"
+            "Sign in",
+            REDIRECT_URI,
+            SCOPE,
+            icon="https://walter.trakt.tv/hotlink-ok/public/favicon.ico",
         )
         if result and "token" in result:
             ss.token = result.get("token")
@@ -58,7 +68,9 @@ def set_user_headers():
 
 def get_user_details():
     if ss.get("user_headers"):
-        response = requests.get("https://api.trakt.tv/users/settings", headers=ss.user_headers)
+        response = requests.get(
+            "https://api.trakt.tv/users/settings", headers=ss.user_headers
+        )
         # st.write(response.json())
         if response.status_code == 200:
             # st.write(response.json())

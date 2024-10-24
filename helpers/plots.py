@@ -65,7 +65,9 @@ def pick_year_heatmap(df):
     """
     df["year"] = df["watched_at"].dt.year
     year_options = [str(year) for year in sorted(df["year"].unique())]
-    selected_year = st.selectbox("Select Year", options=year_options, index=len(year_options) - 1)
+    selected_year = st.selectbox(
+        "Select Year", options=year_options, index=len(year_options) - 1
+    )
     return selected_year
 
 
@@ -85,18 +87,35 @@ def generate_heatmap(df, selected_year):
     heatmap_data = filtered_df.groupby(["month", "day"])["runtime"].sum().reset_index()
 
     # Create a pivot table with months as rows and days as columns
-    heatmap_pivot = heatmap_data.pivot(index="month", columns="day", values="runtime").fillna(0)
+    heatmap_pivot = heatmap_data.pivot(
+        index="month", columns="day", values="runtime"
+    ).fillna(0)
 
     # Ensure all months and days are present
     all_months = list(range(1, 13))
     all_days = list(range(1, 32))
-    heatmap_pivot = heatmap_pivot.reindex(index=all_months, columns=all_days, fill_value=0)
+    heatmap_pivot = heatmap_pivot.reindex(
+        index=all_months, columns=all_days, fill_value=0
+    )
 
     # Calculate the 95th percentile for watchtime to set color scale
     percentile_98 = np.percentile(heatmap_pivot.values.flatten(), 98)
 
     # Define month names in order from January to December
-    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    month_names = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ]
 
     # Define a custom colorscale from black to bright red
     custom_colorscale = [
@@ -242,7 +261,9 @@ def generate_heatmap(df, selected_year):
                     hovertext_row.append(None)
                 else:
                     customdata_row.append(date_str)
-                    hovertext_row.append(f"{date_str}<br>Watchtime: {watchtime_formatted}")
+                    hovertext_row.append(
+                        f"{date_str}<br>Watchtime: {watchtime_formatted}"
+                    )
             except ValueError:
                 customdata_row.append("")
                 hovertext_row.append("")
@@ -306,7 +327,9 @@ def generate_heatmap(df, selected_year):
             hovertext=hovertext,
             textfont={"color": "white", "family": "sans-serif"},
             hoverlabel=dict(
-                font=dict(size=14, family="sans-serif"),  # Set the font size and family for hovertext
+                font=dict(
+                    size=14, family="sans-serif"
+                ),  # Set the font size and family for hovertext
                 bordercolor="black",
             ),
             # font=dict(family="sans-serif"),  # Set the font size, color, and family here
@@ -410,7 +433,12 @@ def generate_month_heatmap_with_features_no_invalid(df, selected_year, selected_
     filtered_df = df[(df["year"] == selected_year) & (df["month"] == selected_month)]
 
     # Aggregate watchtime per day
-    heatmap_data = filtered_df.groupby("day")["runtime"].sum().reindex(range(1, 32), fill_value=0).reset_index()
+    heatmap_data = (
+        filtered_df.groupby("day")["runtime"]
+        .sum()
+        .reindex(range(1, 32), fill_value=0)
+        .reset_index()
+    )
 
     # Determine number of days in the selected month
     _, num_days = calendar.monthrange(selected_year, selected_month)
@@ -430,7 +458,9 @@ def generate_month_heatmap_with_features_no_invalid(df, selected_year, selected_
     for i in range(first_weekday, 7):
         if day_counter > num_days:
             break
-        runtime = heatmap_data.loc[heatmap_data["day"] == day_counter, "runtime"].values[0]
+        runtime = heatmap_data.loc[
+            heatmap_data["day"] == day_counter, "runtime"
+        ].values[0]
         current_week[i] = runtime
         day_counter += 1
     weeks.append(current_week)
@@ -441,7 +471,9 @@ def generate_month_heatmap_with_features_no_invalid(df, selected_year, selected_
         for i in range(7):
             if day_counter > num_days:
                 break
-            runtime = heatmap_data.loc[heatmap_data["day"] == day_counter, "runtime"].values[0]
+            runtime = heatmap_data.loc[
+                heatmap_data["day"] == day_counter, "runtime"
+            ].values[0]
             current_week[i] = runtime
             day_counter += 1
         weeks.append(current_week)
@@ -488,8 +520,14 @@ def generate_month_heatmap_with_features_no_invalid(df, selected_year, selected_
 
     # Calculate the 98th percentile for watchtime to set color scaling
     watchtime_values = heatmap_array[1::2]  # Extract watchtime rows
-    watchtime_values_flat = np.array([item for sublist in watchtime_values for item in sublist if item is not None])
-    percentile_98 = np.percentile(watchtime_values_flat, 98) if watchtime_values_flat.size > 0 else 0
+    watchtime_values_flat = np.array(
+        [item for sublist in watchtime_values for item in sublist if item is not None]
+    )
+    percentile_98 = (
+        np.percentile(watchtime_values_flat, 98)
+        if watchtime_values_flat.size > 0
+        else 0
+    )
 
     # Define days of the week starting from Monday
     days_of_week = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -548,10 +586,19 @@ def generate_month_heatmap_with_features_no_invalid(df, selected_year, selected_
         else:
             # Watchtime row
             formatted_watchtime = [
-                (f"{round(runtime / 60)}h" if runtime is not None and runtime > 30 else "")
+                (
+                    f"{round(runtime / 60)}h"
+                    if runtime is not None and runtime > 30
+                    else ""
+                )
                 for runtime in heatmap_array[row_idx]
             ]
-            z_numeric = [[runtime if runtime is not None else np.nan for runtime in heatmap_array[row_idx]]]
+            z_numeric = [
+                [
+                    runtime if runtime is not None else np.nan
+                    for runtime in heatmap_array[row_idx]
+                ]
+            ]
             trace = go.Heatmap(
                 z=z_numeric,
                 x=days_of_week,
@@ -566,7 +613,9 @@ def generate_month_heatmap_with_features_no_invalid(df, selected_year, selected_
                 texttemplate="%{text}",
                 textfont={"color": "white", "size": 12},
                 hoverinfo="text",
-                hovertext=[[f"Watchtime: {wt}" if wt else "" for wt in formatted_watchtime]],
+                hovertext=[
+                    [f"Watchtime: {wt}" if wt else "" for wt in formatted_watchtime]
+                ],
             )
             traces.append(trace)
 
@@ -676,7 +725,10 @@ def plot_runtime_by_decade(df, media_type):
     # Ensure that the decade values chosen for y are complete
     min_decade = df_decade["decade"].min()
     max_decade = df_decade["decade"].max()
-    all_decades = [str(decade) + "s" for decade in range(int(min_decade[:-1]), int(max_decade[:-1]) + 1, 10)]
+    all_decades = [
+        str(decade) + "s"
+        for decade in range(int(min_decade[:-1]), int(max_decade[:-1]) + 1, 10)
+    ]
 
     df_decade.set_index("decade", inplace=True)
 
@@ -716,7 +768,9 @@ def plot_runtime_by_decade(df, media_type):
 
 
 @st.cache_data
-def process_chart_data(df_, column_name, sum_100=False, media_type="all", n=10, others_threshold=1):
+def process_chart_data(
+    df_, column_name, sum_100=False, media_type="all", n=10, others_threshold=1
+):
     """
     Process data for visualization.
     Handles NaN and empty lists, marks them as 'Unknown', and groups smaller categories into 'Others'.
@@ -731,12 +785,20 @@ def process_chart_data(df_, column_name, sum_100=False, media_type="all", n=10, 
     total_time = df["watchtime"].sum()
 
     # Identify entries needing to be set as 'Unknown'
-    has_unknowns = df[column_name].isna().any() or df[column_name].apply(lambda x: x == [] or x == "" or x == " ").any()
+    has_unknowns = (
+        df[column_name].isna().any()
+        or df[column_name].apply(lambda x: x == [] or x == "" or x == " ").any()
+    )
 
     # Handle NaN values and empty lists
     if has_unknowns:
         df[column_name] = df[column_name].apply(
-            lambda x: "Unknown" if (not isinstance(x, list) and pd.isnull(x)) or (isinstance(x, list) and not x) else x
+            lambda x: (
+                "Unknown"
+                if (not isinstance(x, list) and pd.isnull(x))
+                or (isinstance(x, list) and not x)
+                else x
+            )
         )
 
     # Handle list columns
@@ -747,24 +809,31 @@ def process_chart_data(df_, column_name, sum_100=False, media_type="all", n=10, 
 
     # Group by the specified column and aggregate watchtime
     df_grouped = (
-        df.groupby(column_name).agg({"watchtime": "sum"}).sort_values("watchtime", ascending=False).reset_index()
+        df.groupby(column_name)
+        .agg({"watchtime": "sum"})
+        .sort_values("watchtime", ascending=False)
+        .reset_index()
     )
 
     # Percentage calculations and formatting
     df_grouped["%_tw"] = (df_grouped["watchtime"] / total_time) * 100
-    df_grouped["formatted_time"] = df_grouped["watchtime"].apply(lambda x: f"{x // 1440} days {x % 1440 // 60} hours")
+    df_grouped["formatted_time"] = df_grouped["watchtime"].apply(
+        lambda x: f"{x // 1440} days {x % 1440 // 60} hours"
+    )
 
     with st.expander("Data"):
         st.write(df_grouped)
 
     # Group smaller categories into 'Others'
-    others_mask = ((df_grouped.index >= n) | (df_grouped["%_tw"] < others_threshold)) & (
-        df_grouped[column_name] != "Unknown"
-    )
+    others_mask = (
+        (df_grouped.index >= n) | (df_grouped["%_tw"] < others_threshold)
+    ) & (df_grouped[column_name] != "Unknown")
     others_sum = df_grouped.loc[others_mask, "watchtime"].sum()
     if others_sum > 0:
         others_percentage = others_sum / total_time * 100
-        others_formatted_time = f"{others_sum // 1440} days {others_sum % 1440 // 60} hours"
+        others_formatted_time = (
+            f"{others_sum // 1440} days {others_sum % 1440 // 60} hours"
+        )
         top_categories = df_grouped.loc[~others_mask]
         top_categories = pd.concat(
             [
@@ -796,13 +865,23 @@ def process_chart_data(df_, column_name, sum_100=False, media_type="all", n=10, 
     return df_grouped
 
 
-def generate_chart(df_, column_name, chart_type="pie", sum_100=False, media_type="all", n=10, others_threshold=1):
+def generate_chart(
+    df_,
+    column_name,
+    chart_type="pie",
+    sum_100=False,
+    media_type="all",
+    n=10,
+    others_threshold=1,
+):
     """
     Generate a chart based on the processed data.
     Allows selection between 'bar' or 'pie' chart.
     """
     # Process data for visualization
-    df_grouped = process_chart_data(df_, column_name, sum_100, media_type, n, others_threshold)
+    df_grouped = process_chart_data(
+        df_, column_name, sum_100, media_type, n, others_threshold
+    )
 
     # with st.expander("Data"):
     #     st.write(df_grouped)
@@ -847,7 +926,12 @@ def generate_chart(df_, column_name, chart_type="pie", sum_100=False, media_type
             textinfo="text",
             insidetextorientation="horizontal",
             sort=False,
-            marker=dict(colors=[color_map.get(name, "default_color") for name in df_grouped[column_name]]),
+            marker=dict(
+                colors=[
+                    color_map.get(name, "default_color")
+                    for name in df_grouped[column_name]
+                ]
+            ),
         )
 
     else:
@@ -1008,7 +1092,9 @@ def plot_with_echarts(df, column_name):
     # st.write(data)
 
     # Sort legend items such that 'Others' and 'Unknown' are at the bottom
-    legend_data = [item["name"] for item in data if item["name"] not in ["Others", "Unknown"]] + ["Others", "Unknown"]
+    legend_data = [
+        item["name"] for item in data if item["name"] not in ["Others", "Unknown"]
+    ] + ["Others", "Unknown"]
 
     # Dynamically reduce the number of labels for better readability
     # label_threshold = 10
@@ -1073,7 +1159,10 @@ def plot_with_echarts(df, column_name):
                 "fontWeight": "500",
             },
         },
-        "tooltip": {"trigger": "item", "textStyle": {"fontFamily": "sans-serif", "fontSize": 14}},
+        "tooltip": {
+            "trigger": "item",
+            "textStyle": {"fontFamily": "sans-serif", "fontSize": 14},
+        },
         "legend": {
             "orient": "vertical",
             "left": "right",

@@ -19,7 +19,12 @@ import helpers.plots as plots
 
 from datetime import datetime as dt
 
-from db.db_o3 import close_all_connections, create_schema, test_postgres_connection, read_table_df
+from db.db_o3 import (
+    close_all_connections,
+    create_schema,
+    test_postgres_connection,
+    read_table_df,
+)
 import pandas as pd
 import numpy as np
 
@@ -60,7 +65,9 @@ from urllib.parse import urljoin
 
 locale.setlocale(locale.LC_ALL, "en_US")
 
-st.set_page_config(page_title="CharmingGraph", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(
+    page_title="CharmingGraph", layout="wide", initial_sidebar_state="collapsed"
+)
 
 pg = st.navigation(
     [
@@ -169,7 +176,9 @@ class LS:
         a = cls.load_all()
         # del st.session_state[cls.BASE + 'all'][key]
         st.session_state[cls.BASE + "all"] = {k: v for k, v in a.items() if k != key}
-        st_js(code=f"""localStorage.removeItem('{key}')""", key="_del_" + str(cls.counter))
+        st_js(
+            code=f"""localStorage.removeItem('{key}')""", key="_del_" + str(cls.counter)
+        )
         cls.counter += 1
 
     @classmethod
@@ -277,7 +286,8 @@ if not ss.get("trakt_uuid"):
             st.button(
                 "Demo Account",
                 on_click=lambda: ss.update(
-                    {"trakt_uuid": "a743c1b7d8d0beddad63187f471d20370da2b362"}, key="demo_button"
+                    {"trakt_uuid": "a743c1b7d8d0beddad63187f471d20370da2b362"},
+                    key="demo_button",
                 ),
             )
 
@@ -301,7 +311,8 @@ if not ss.get("trakt_uuid"):
         login_dialog()
 else:
     user_details = req.get(
-        f"https://api.trakt.tv/users/{ss['trakt_user_id']}?extended=full", headers=ss.user_headers
+        f"https://api.trakt.tv/users/{ss['trakt_user_id']}?extended=full",
+        headers=ss.user_headers,
     ).json()
 
     # st.write(user_details)
@@ -661,7 +672,11 @@ else:
     )
 
     year_select = c3b.selectbox(
-        "Year", sorted(df["watched_at"].dt.year.unique().tolist()), index=None, on_change=year_recent, key="year"
+        "Year",
+        sorted(df["watched_at"].dt.year.unique().tolist()),
+        index=None,
+        on_change=year_recent,
+        key="year",
     )
 
     if duration_select == None and year_select == None:
@@ -673,7 +688,9 @@ else:
         df_original = df.copy(deep=True)
         df = df[df.watched_at.dt.year == year_select]
         c1, c2, _ = st.columns([1, 1, 6])
-        c1.write(f"{df.runtime.sum() // 1440} days {df.runtime.sum() % 1440 // 60} hours")
+        c1.write(
+            f"{df.runtime.sum() // 1440} days {df.runtime.sum() % 1440 // 60} hours"
+        )
         c2.write(
             f"{df_original.runtime.sum() // 1440} days {df_original.runtime.sum() % 1440 // 60} hours",
         )
@@ -796,7 +813,9 @@ else:
     @st.fragment
     def limited_df():
         columns_list = st.multiselect(
-            "Selected Columns", df_show.columns.tolist(), ["title", "media_type", "watchtime"]
+            "Selected Columns",
+            df_show.columns.tolist(),
+            ["title", "media_type", "watchtime"],
         )
         dw.format_df(df_show[columns_list], agg=True, max_width=300)
 
@@ -887,14 +906,17 @@ else:
         #     with container:
         cols = st.columns([5, 1])
         with cols[0]:
-            selected_points = plotly_events(fig, override_height=700, hover_event=True, key="2")
+            selected_points = plotly_events(
+                fig, override_height=700, hover_event=True, key="2"
+            )
         with cols[1]:
             # if selected_points == []:
             #     selected_points = x
 
             try:
                 chosen_date = dt.strptime(
-                    f"{selected_points[0]['x']} {selected_points[0]['y']} {selected_year}", "%d %b %Y"
+                    f"{selected_points[0]['x']} {selected_points[0]['y']} {selected_year}",
+                    "%d %b %Y",
                 )
 
                 next_day = chosen_date + timedelta(days=1)
@@ -906,7 +928,9 @@ else:
                     df_display = (
                         df[(df.watched_at >= chosen_date) & (df.watched_at < next_day)]
                         .groupby("title")
-                        .agg({"runtime": "sum", "tmdb_poster_url": "first"})[["runtime", "tmdb_poster_url"]]
+                        .agg({"runtime": "sum", "tmdb_poster_url": "first"})[
+                            ["runtime", "tmdb_poster_url"]
+                        ]
                         .sort_values("runtime", ascending=False)
                         .iloc[:2]
                         .reset_index()
@@ -914,12 +938,18 @@ else:
 
                     if not df_display.empty:
 
-                        center_text(f"On {chosen_date.strftime('%d %B %Y')}, you watched:")
+                        center_text(
+                            f"On {chosen_date.strftime('%d %B %Y')}, you watched:"
+                        )
 
                         st.text(" ")
 
                         def poster_card(row):
-                            st.image(row.tmdb_poster_url, use_column_width="always", caption=f"{row.title}")
+                            st.image(
+                                row.tmdb_poster_url,
+                                use_column_width="always",
+                                caption=f"{row.title}",
+                            )
                             # center_text(f"{row.title} <br> {row.runtime // 60}h {row.runtime % 60}m", font_size=14)
 
                         for row in df_display.itertuples():
@@ -938,7 +968,11 @@ else:
 
                                 if image is not None:
                                     return image.resize(
-                                        ((image.size[0] * height) // image.size[1], height), Image.LANCZOS
+                                        (
+                                            (image.size[0] * height) // image.size[1],
+                                            height,
+                                        ),
+                                        Image.LANCZOS,
                                     )
                                 return None
 
@@ -1012,12 +1046,23 @@ else:
 
     @st.fragment
     def plot_with_options(df_show, catg, plot, sum_100, radio_index, gen_chart=True):
-        media_radio = st.radio(catg.upper(), ["movie", "show", "all"], radio_index, horizontal=True, key=catg)
+        media_radio = st.radio(
+            catg.upper(),
+            ["movie", "show", "all"],
+            radio_index,
+            horizontal=True,
+            key=catg,
+        )
 
         if gen_chart:
-            return st.plotly_chart(plots.generate_chart(df_show, catg, plot, sum_100, media_radio))
+            return st.plotly_chart(
+                plots.generate_chart(df_show, catg, plot, sum_100, media_radio)
+            )
         else:
-            return st.plotly_chart(plots.plot_runtime_by_decade(df_show, media_radio), use_container_width=True)
+            return st.plotly_chart(
+                plots.plot_runtime_by_decade(df_show, media_radio),
+                use_container_width=True,
+            )
 
     # @st.fragment
     def graphs():
@@ -1043,11 +1088,19 @@ else:
 
                 sum_100 = False
                 if catg == "imdb_genres":
-                    sum_100 = st.radio("Sum to 100%", [True, False], 0, horizontal=True, key=f"{catg}_sum100")
+                    sum_100 = st.radio(
+                        "Sum to 100%",
+                        [True, False],
+                        0,
+                        horizontal=True,
+                        key=f"{catg}_sum100",
+                    )
                 if catg != "decade":
                     plot_with_options(df_show, catg, plot, sum_100, radio_index)
                 else:
-                    plot_with_options(df, catg, plot, sum_100, radio_index, gen_chart=False)
+                    plot_with_options(
+                        df, catg, plot, sum_100, radio_index, gen_chart=False
+                    )
 
     graphs()
 

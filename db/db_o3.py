@@ -134,8 +134,12 @@ def timeit(func):
         finally:
             end_time = time.perf_counter()
             total_time = end_time - start_time
-            logger.info(f"Function `{func.__name__}` executed in {total_time:.2f} seconds.")
-            st.toast(f"Function `{func.__name__}` executed in {total_time:.2f} seconds.")
+            logger.info(
+                f"Function `{func.__name__}` executed in {total_time:.2f} seconds."
+            )
+            st.toast(
+                f"Function `{func.__name__}` executed in {total_time:.2f} seconds."
+            )
 
     return wrapper
 
@@ -163,7 +167,9 @@ def get_model_columns(model: Any) -> List[str]:
     return [column.name for column in inspect(model).columns]
 
 
-def prepare_dataframe(df: pd.DataFrame, model: Any, uuid: Optional[str] = None) -> pd.DataFrame:
+def prepare_dataframe(
+    df: pd.DataFrame, model: Any, uuid: Optional[str] = None
+) -> pd.DataFrame:
     """
     Prepare DataFrame for insertion/upsert/sync:
     - Add uuid if necessary
@@ -197,7 +203,9 @@ def prepare_dataframe(df: pd.DataFrame, model: Any, uuid: Optional[str] = None) 
     # Ensure that list-like columns are actual lists (for ARRAY types)
     inspector = inspect(engine)
     columns_info = inspector.get_columns(model.__tablename__)
-    array_columns = [col["name"] for col in columns_info if isinstance(col["type"], ARRAY)]
+    array_columns = [
+        col["name"] for col in columns_info if isinstance(col["type"], ARRAY)
+    ]
 
     for col in array_columns:
         if col in df.columns:
@@ -348,7 +356,12 @@ def add_data(
 
     if operation in ["upsert", "sync"]:
         updates = sql.SQL(", ").join(
-            [sql.SQL("{} = EXCLUDED.{}").format(sql.Identifier(col), sql.Identifier(col)) for col in non_pk_columns]
+            [
+                sql.SQL("{} = EXCLUDED.{}").format(
+                    sql.Identifier(col), sql.Identifier(col)
+                )
+                for col in non_pk_columns
+            ]
         )
         insert_stmt = sql.SQL(
             """
@@ -368,13 +381,25 @@ def add_data(
         try:
             with conn.cursor() as cur:
                 # Prepare data as list of tuples
-                data_tuples = [tuple(record[col] for col in columns) for record in records]
+                data_tuples = [
+                    tuple(record[col] for col in columns) for record in records
+                ]
 
                 # Execute the bulk insert/upsert
-                execute_values(cur, insert_stmt.as_string(cur), data_tuples, template=None, page_size=1000)
+                execute_values(
+                    cur,
+                    insert_stmt.as_string(cur),
+                    data_tuples,
+                    template=None,
+                    page_size=1000,
+                )
 
-            logger.info(f"Successfully {operation}ed {len(records)} records into '{model_name}'.")
-            st.toast(f"Successfully {operation}ed {len(records)} records into '{model_name}'.")
+            logger.info(
+                f"Successfully {operation}ed {len(records)} records into '{model_name}'."
+            )
+            st.toast(
+                f"Successfully {operation}ed {len(records)} records into '{model_name}'."
+            )
         except Exception as e:
             logger.exception("Error during bulk upsert operation.")
             st.toast(f"Error during bulk upsert operation: {str(e)}")
@@ -391,20 +416,30 @@ def add_data(
                     if len(primary_keys) == 1:
                         pk_column = getattr(model, primary_keys[0])
                         filter_condition = and_(
-                            getattr(model, "trakt_uuid") == uuid, ~pk_column.in_([x[0] for x in pk_values])
+                            getattr(model, "trakt_uuid") == uuid,
+                            ~pk_column.in_([x[0] for x in pk_values]),
                         )
                     else:
                         # For composite primary keys
                         pk_columns = tuple(getattr(model, pk) for pk in primary_keys)
                         filter_condition = and_(
-                            getattr(model, "trakt_uuid") == uuid, ~tuple_(pk_columns).in_(pk_values)
+                            getattr(model, "trakt_uuid") == uuid,
+                            ~tuple_(pk_columns).in_(pk_values),
                         )
 
                     # Perform the delete operation
-                    deleted = session.query(model).filter(filter_condition).delete(synchronize_session=False)
+                    deleted = (
+                        session.query(model)
+                        .filter(filter_condition)
+                        .delete(synchronize_session=False)
+                    )
                     session.commit()
-                    logger.info(f"Deleted {deleted} records from '{model_name}' not present in provided data.")
-                    st.toast(f"Deleted {deleted} records from '{model_name}' not present in provided data.")
+                    logger.info(
+                        f"Deleted {deleted} records from '{model_name}' not present in provided data."
+                    )
+                    st.toast(
+                        f"Deleted {deleted} records from '{model_name}' not present in provided data."
+                    )
         except Exception as e:
             logger.exception("Error during sync delete operation.")
             st.error(f"Error during sync delete operation: {str(e)}")
@@ -459,14 +494,21 @@ def read_table_df(
                     left_model = model_map.get(left_table)
                     right_model = model_map.get(right_table)
                     if not left_model or not right_model:
-                        logger.error(f"One of the join tables '{left_table}' or '{right_table}' not found.")
-                        st.error(f"One of the join tables '{left_table}' or '{right_table}' not found.")
-                        raise ValueError(f"One of the join tables '{left_table}' or '{right_table}' not found.")
+                        logger.error(
+                            f"One of the join tables '{left_table}' or '{right_table}' not found."
+                        )
+                        st.error(
+                            f"One of the join tables '{left_table}' or '{right_table}' not found."
+                        )
+                        raise ValueError(
+                            f"One of the join tables '{left_table}' or '{right_table}' not found."
+                        )
 
                     # Perform the join
                     query = query.join(
                         right_model,
-                        getattr(left_model, left_col) == getattr(right_model, right_col),
+                        getattr(left_model, left_col)
+                        == getattr(right_model, right_col),
                         isouter=True,  # Use outer join for versatility
                     )
                     joined_models[right_table] = right_model
@@ -485,7 +527,10 @@ def read_table_df(
             # Joined tables columns
             for joined_model in joined_models.values():
                 for column in joined_model.__table__.columns:
-                    if column.name not in ex_columns and column.name not in seen_columns:
+                    if (
+                        column.name not in ex_columns
+                        and column.name not in seen_columns
+                    ):
                         all_columns.append(column)
                         seen_columns.add(column.name)
 
@@ -592,7 +637,9 @@ def read_table_df(
             raise
 
 
-def filter_new_data(df: pd.DataFrame, df_col: str, model_name: str, model_col: str) -> List[Any]:
+def filter_new_data(
+    df: pd.DataFrame, df_col: str, model_name: str, model_col: str
+) -> List[Any]:
     """
     Filter new data based on existing records in the database.
 
@@ -617,10 +664,14 @@ def filter_new_data(df: pd.DataFrame, df_col: str, model_name: str, model_col: s
 
     with get_session() as session:
         try:
-            query = select(getattr(model, model_col)).where(getattr(model, model_col).in_(df[df_col].tolist()))
+            query = select(getattr(model, model_col)).where(
+                getattr(model, model_col).in_(df[df_col].tolist())
+            )
             result = session.execute(query)
             existing_values = result.scalars().all()
-            logger.info(f"Filtered {len(existing_values)} existing records from '{model_name}'.")
+            logger.info(
+                f"Filtered {len(existing_values)} existing records from '{model_name}'."
+            )
             return existing_values
         except SQLAlchemyError as e:
             logger.exception(f"An error occurred while filtering data: {str(e)}")
@@ -653,10 +704,14 @@ def check_value_exists(table_name: str, column_name: str, value: Any) -> bool:
         try:
             result = session.execute(query)
             exists_flag = bool(result.scalar())
-            logger.info(f"Value '{value}' exists in '{table_name}.{column_name}': {exists_flag}")
+            logger.info(
+                f"Value '{value}' exists in '{table_name}.{column_name}': {exists_flag}"
+            )
             return exists_flag
         except SQLAlchemyError as e:
-            logger.exception(f"An error occurred while checking value existence: {str(e)}")
+            logger.exception(
+                f"An error occurred while checking value existence: {str(e)}"
+            )
             st.error(f"An error occurred while checking value existence: {str(e)}")
             return False
 
@@ -697,7 +752,9 @@ def get_column_value(
         try:
             if operation == "first":
                 query = (
-                    select(getattr(model, target_column)).where(getattr(model, filter_column) == filter_value).limit(1)
+                    select(getattr(model, target_column))
+                    .where(getattr(model, filter_column) == filter_value)
+                    .limit(1)
                 )
                 result = session.execute(query)
                 value = result.scalar()
@@ -717,6 +774,8 @@ def get_column_value(
                 )
                 return value
         except SQLAlchemyError as e:
-            logger.exception(f"An error occurred while retrieving column value: {str(e)}")
+            logger.exception(
+                f"An error occurred while retrieving column value: {str(e)}"
+            )
             st.error(f"An error occurred while retrieving column value: {str(e)}")
             return None

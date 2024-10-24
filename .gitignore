@@ -1,3 +1,5 @@
 /.vscode
 /code_bits.ipynb
 /__pycache__
+/*.csv
+/code_bits.*
