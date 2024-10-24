@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@xata.io/client": "^0.0.0-next.v64f10283eb9a098c575590d3ea17600e350321c9"
+  }
+}
