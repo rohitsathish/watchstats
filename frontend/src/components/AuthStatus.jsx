@@ -31,7 +31,7 @@ const AuthStatus = () => {
     handleLogin,
     handleLogout,
     refreshAuthState,
-    reconnectSocket
+    reconnectSSE
   } = useAuth();
 
   const toast = useToast();
@@ -178,7 +178,7 @@ const AuthStatus = () => {
   // Handle manual refresh - memoize to prevent recreating on each render
   const handleRefresh = useCallback(() => {
     if (!connectionStatus.connected) {
-      reconnectSocket();
+      reconnectSSE();
       toast({
         title: 'Reconnecting',
         description: 'Attempting to reconnect to server...',
@@ -196,7 +196,7 @@ const AuthStatus = () => {
         isClosable: true,
       });
     }
-  }, [connectionStatus.connected, reconnectSocket, refreshAuthState, toast]);
+  }, [connectionStatus.connected, reconnectSSE, refreshAuthState, toast]);
 
   return (
     <Box
