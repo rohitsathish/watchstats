@@ -19,7 +19,8 @@ let eventHandlers = {
   onAuthUpdate: null,
   onHeartbeat: null,
   onDisconnect: null,
-  onError: null
+  onError: null,
+  onStatusChange: null  // Add this line
 };
 
 // Reconnection settings
@@ -29,6 +30,9 @@ let reconnectTimeout = null;
 let reconnectInterval = RECONNECT_INTERVAL;
 let reconnectAttempts = 0;
 let isReconnecting = false;
+
+// Heartbeat monitoring
+let heartbeatMonitorInterval = null;
 
 /**
  * Connect to the SSE endpoint
@@ -55,8 +59,8 @@ const connect = (handlers = {}) => {
     connectionStatus.connecting = true;
     connectionStatus.connected = false;
     
-    if (handlers.onStatusChange) {
-      handlers.onStatusChange(connectionStatus);
+    if (eventHandlers.onStatusChange) {
+      eventHandlers.onStatusChange(connectionStatus);
     }
 
     // Create EventSource - Updated to use the new events/stream endpoint
@@ -136,14 +140,34 @@ const connect = (handlers = {}) => {
         eventHandlers.onError(connectionStatus.error);
       }
       
-      if (handlers.onStatusChange) {
-        handlers.onStatusChange(connectionStatus);
+      if (eventHandlers.onStatusChange) {
+        eventHandlers.onStatusChange(connectionStatus);
       }
       
       // Close and attempt to reconnect
       disconnect();
       handleReconnect();
     });
+
+    // Start heartbeat monitoring
+    if (heartbeatMonitorInterval) {
+      clearInterval(heartbeatMonitorInterval);
+    }
+    
+    heartbeatMonitorInterval = setInterval(() => {
+      // Check if we've received a heartbeat recently (within 30 seconds)
+      if (connectionStatus.lastHeartbeat) {
+        const now = Date.now();
+        const lastHeartbeat = new Date(connectionStatus.lastHeartbeat).getTime();
+        const timeSinceHeartbeat = now - lastHeartbeat;
+        
+        // If no heartbeat for more than 30 seconds, reconnect
+        if (timeSinceHeartbeat > 30000) {
+          console.warn(`No heartbeat received for ${Math.round(timeSinceHeartbeat / 1000)}s, reconnecting...`);
+          updateConnection();
+        }
+      }
+    }, 10000); // Check every 10 seconds
 
     return true;
   } catch (error) {
@@ -158,8 +182,8 @@ const connect = (handlers = {}) => {
       eventHandlers.onError(error);
     }
     
-    if (handlers.onStatusChange) {
-      handlers.onStatusChange(connectionStatus);
+    if (eventHandlers.onStatusChange) {
+      eventHandlers.onStatusChange(connectionStatus);
     }
     
     // Attempt to reconnect
@@ -242,6 +266,18 @@ const updateConnection = () => {
  */
 const getStatus = () => {
   return { ...connectionStatus };
+};
+
+/**
+ * Update the connection status
+ * @param {Object} newStatus - New status properties to update
+ */
+const updateStatus = (newStatus) => {
+  connectionStatus = { ...connectionStatus, ...newStatus };
+  
+  if (eventHandlers.onStatusChange) {
+    eventHandlers.onStatusChange(connectionStatus);
+  }
 };
 
 export const sseService = {
