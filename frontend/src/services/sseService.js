@@ -56,12 +56,10 @@ const connect = (handlers = {}) => {
 
   try {
     // Update status
-    connectionStatus.connecting = true;
-    connectionStatus.connected = false;
-    
-    if (eventHandlers.onStatusChange) {
-      eventHandlers.onStatusChange(connectionStatus);
-    }
+    updateStatus({
+      connecting: true,
+      connected: false
+    });
 
     // Create EventSource - Updated to use the new events/stream endpoint
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -83,16 +81,14 @@ const connect = (handlers = {}) => {
         console.log('SSE connection event:', data);
         
         // Update connection status
-        connectionStatus.connected = true;
-        connectionStatus.connecting = false;
-        connectionStatus.error = null;
+        updateStatus({
+          connected: true,
+          connecting: false,
+          error: null
+        });
         
         if (eventHandlers.onConnection) {
           eventHandlers.onConnection(data);
-        }
-        
-        if (handlers.onStatusChange) {
-          handlers.onStatusChange(connectionStatus);
         }
       } catch (error) {
         console.error('Error parsing connection event:', error);
@@ -132,16 +128,15 @@ const connect = (handlers = {}) => {
       console.error('SSE connection error:', event);
       
       // Update status
-      connectionStatus.connected = false;
-      connectionStatus.connecting = false;
-      connectionStatus.error = new Error('Connection error');
+      const error = new Error('Connection error');
+      updateStatus({
+        connected: false,
+        connecting: false,
+        error: error
+      });
       
       if (eventHandlers.onError) {
-        eventHandlers.onError(connectionStatus.error);
-      }
-      
-      if (eventHandlers.onStatusChange) {
-        eventHandlers.onStatusChange(connectionStatus);
+        eventHandlers.onError(error);
       }
       
       // Close and attempt to reconnect
@@ -174,16 +169,14 @@ const connect = (handlers = {}) => {
     console.error('Failed to establish SSE connection:', error);
     
     // Update status
-    connectionStatus.connected = false;
-    connectionStatus.connecting = false;
-    connectionStatus.error = error;
+    updateStatus({
+      connected: false,
+      connecting: false,
+      error: error
+    });
     
     if (eventHandlers.onError) {
       eventHandlers.onError(error);
-    }
-    
-    if (eventHandlers.onStatusChange) {
-      eventHandlers.onStatusChange(connectionStatus);
     }
     
     // Attempt to reconnect
@@ -284,5 +277,6 @@ export const sseService = {
   connect,
   disconnect,
   updateConnection,
-  getStatus
+  getStatus,
+  updateStatus
 };
