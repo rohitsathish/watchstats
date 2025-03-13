@@ -29,6 +29,7 @@ let reconnectTimeout = null;
 let reconnectInterval = RECONNECT_INTERVAL;
 let reconnectAttempts = 0;
 let isReconnecting = false;
+let heartbeatMonitorInterval = null;
 
 /**
  * Connect to the SSE endpoint
@@ -215,7 +216,15 @@ const disconnect = () => {
   }
   
   // Update status
-  updateStatus({ connected: false, connecting: false });
+  connectionStatus = { 
+    ...connectionStatus, 
+    connected: false, 
+    connecting: false 
+  };
+  
+  if (eventHandlers.onStatusChange) {
+    eventHandlers.onStatusChange(connectionStatus);
+  }
   
   if (eventHandlers.onDisconnect) {
     eventHandlers.onDisconnect();
