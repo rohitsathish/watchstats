@@ -1,0 +1,21 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+httpx==0.25.1
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.6
+pydantic==2.4.2
+python-dateutil==2.8.2
+python-dotenv==1.0.0
+requests==2.31.0
+PyJWT==2.10.1
+diskcache==5.6.3
+asyncpg>=0.27.0
+httpx[http2]>=0.24.1
+authlib>=1.2.1
+itsdangerous>=2.1.2  # Required for SessionMiddleware
+sse-starlette>=1.6.5  # Required for Server-Sent Events
+polars>=0.19.12
+aiosqlite>=0.19.0
+
+pathspec>=0.11.0
+genson>=1.2.2

@@ -1,0 +1,131 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Structure
+
+## Overview
+A media visualization platform with:
+- Backend: FastAPI (in `/app`)
+- Frontend: React with Vite and Chakra UI (in `/frontend`)
+
+---
+
+## Backend (`/app`)
+FastAPI backend serving APIs and WebSocket-based real-time updates.
+
+### Main Files
+- `main.py`: Initializes the FastAPI app, middleware (CORS, session, auth), mounts Socket.IO, defines lifecycle events.
+
+### Subdirectories
+
+#### 📁 `api`
+Endpoint definitions, request handling and route-specific logic.
+- `__init__.py`: Imports API endpoints.
+- `auth.py`: Manages OAuth login, callbacks, JWT tokens, cookies, and WebSocket notifications.
+- `watch_history.py`: Handles media data endpoints for Trakt
+
+#### 📁 `core`
+Contains foundational utilities, integrations and low-level api interaction.
+- `__init__.py`: Imports API endpoints.
+- `auth.py`: Authentication logic (OAuth, JWT).
+- `config.py`: Loads application configuration settings.
+- `websocket.py`: Sets up/manages Socket.IO for real-time sessions.
+- `trakt_api.py`: Manages api calls to Trakt for media related data
+
+#### 📁 `db`
+Database and cache interaction logic.
+- `cache.py`: Caching.
+- `db.py`: Database connections, CRUD operations.
+- `schema.sql`: Schema for database initialization.
+
+#### 📁 `services`
+Data processing logic.
+- `watch_service.py`: Processes and handles Trakt data with polars and caching.
+
+---
+
+## Frontend (`frontend`)
+React application built with Vite and Chakra UI interacting with FastAPI backend.
+
+### Root Files
+- `vite.config.js`: Vite config (proxy settings, CORS).
+
+### Main Directories
+
+#### 📁 `public`
+Static frontend assets.
+
+#### 📁 `src`
+React app source code and structure.
+
+##### Main Files
+- `App.css`
+- `App.jsx`
+- `index.css`
+- `main.jsx`: Root React rendering entry.
+- `theme.js`: Chakra UI theme customization.
+
+#### Subdirectories within `src`
+
+##### 📂 `components`
+Reusable React components.
+- `AuthStatus.jsx`: Authentication status & actions.
+- `ConnectionStatus.jsx`: Real-time connection status component.
+- `Footer.jsx`
+- `Header.jsx`
+
+##### 📂 `context`
+Global React contexts.
+- `AuthContext.jsx`: Authentication context.
+
+##### 📂 `pages`
+React page components for specific routes.
+- `AuthCallback.jsx`: OAuth authentication callback handling.
+- `HomePage.jsx`: Homepage component.
+
+##### 📂 `services`
+Utility modules for backend interactions.
+- `auth.js`: Authentication service.
+- `socket.js`: Socket.IO connection management.
+
+##### 📂 `utils`
+Common helper functions and API utilities.
+- `api.js`: Axios API wrapper.
+
+
+# Guidelines
+- Always make a plan and execute step by step.
+- Propose and implement the most suitable approach - the one that optimally balances low code complexity and high performance/low latency
+- Always write creating clean, simple, efficient code that effectively fulfiills the user request.
+
+## Backend - Python
+
+### Code Quality
+- Modularize code into files based on functionality.
+- Write concise Google-style docstrings.
+- Load environment variables via `.env` in a dedicated config.
+- Implement try-except blocks for common issues
+
+### User Preferences
+- Use Plotly for plotting.
+- Use Polars for data processing, leveraging lazy loading, vectorized operations, and multi-threading for optimal performance.
+
+---
+
+## Frontend - Vite, React and Chakra UI
+
+### Project Setup
+- Keep dependencies minimal and optimize performance with tree-shaking and lazy loading.
+
+### Code Structure
+- Modular, scalable and reusable components.
+- Keep components modular (/components), organize pages (/pages), and configure Chakra UI in a central theme file (`theme.js`). 
+- Use React Query (TanStack Query) for state management
+- Use Chakra UI’s component-based styling to avoid unnecessary CSS complexity.  
+
+### Performance
+- Prioritize performance via Vite features (fast HMR, minification, lazy loading).
+- Prioritize user experience and development efficiency.
+
