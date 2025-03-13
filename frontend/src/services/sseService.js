@@ -208,9 +208,14 @@ const disconnect = () => {
     reconnectTimeout = null;
   }
   
+  // Clear heartbeat monitor
+  if (heartbeatMonitorInterval) {
+    clearInterval(heartbeatMonitorInterval);
+    heartbeatMonitorInterval = null;
+  }
+  
   // Update status
-  connectionStatus.connected = false;
-  connectionStatus.connecting = false;
+  updateStatus({ connected: false, connecting: false });
   
   if (eventHandlers.onDisconnect) {
     eventHandlers.onDisconnect();
