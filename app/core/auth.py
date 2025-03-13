@@ -45,9 +45,11 @@ def create_trakt_headers(access_token: str) -> Dict[str, str]:
 
 
 # JWT token functions
-def create_jwt_token(uuid: str) -> str:
+def create_jwt_token(uuid: str, expires_minutes: Optional[int] = None) -> str:
     """Create a JWT token with the user's UUID and expiration time"""
-    expiration = datetime.utcnow() + timedelta(minutes=JWT_EXPIRE_MINUTES)
+    # Use provided expires_minutes if available, otherwise use config value
+    minutes = expires_minutes if expires_minutes is not None else JWT_EXPIRE_MINUTES
+    expiration = datetime.utcnow() + timedelta(minutes=minutes)
     payload = {"sub": uuid, "exp": expiration, "iat": datetime.utcnow()}
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
